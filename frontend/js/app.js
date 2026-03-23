@@ -2,7 +2,7 @@
 //  CONFIGURACIÓN DE API — IP dinámica
 // ============================================================
 function getAPIBaseURL() {
-  let ip = localStorage.getItem('aquasense_ip') || '192.168.0.9';
+  let ip = localStorage.getItem('aquasense_ip') || 'localhost';
   return `http://${ip}:5000`;
 }
 
@@ -13,7 +13,7 @@ const CONFIG = {
 
 // Para cambiar IP: ejecuta cambiarIP() en la consola (F12)
 function cambiarIP() {
-  const actual = localStorage.getItem('aquasense_ip') || '192.168.0.9';
+  const actual = localStorage.getItem('aquasense_ip') || 'localhost';
   const nueva = prompt(`IP actual: ${actual}\n\nIngresa la nueva IP del servidor:`, actual);
   if (nueva && nueva.trim()) {
     localStorage.setItem('aquasense_ip', nueva.trim());

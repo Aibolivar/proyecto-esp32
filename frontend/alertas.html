@@ -125,12 +125,8 @@
 
 <div id="toast"><span id="toast-icon">ℹ️</span><span id="toast-msg">Mensaje</span></div>
 
+<script src="js/app.js"></script>
 <script>
-  function getAPI() {
-    const ip = localStorage.getItem('aquasense_ip') || '192.168.0.9';
-    return `http://${ip}:5000`;
-  }
-  const API = getAPI();
   let alertasData = [];
 
   function updateClock() {
@@ -141,7 +137,7 @@
 
   async function cargarAlertas() {
     try {
-      const res = await axios.get(`${API}/getAlertas`);
+      const res = await axios.get(`${CONFIG.API_BASE_URL}/getAlertas`);
       // [[mensaje, fecha_hora], ...] — solo activas
       alertasData = res.data.map(([mensaje, fecha], i) => ({ id: i+1, mensaje, fecha }));
 

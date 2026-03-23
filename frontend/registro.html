@@ -72,11 +72,8 @@
   </div>
 </div>
 
+<script src="../js/app.js"></script>
 <script>
-  function getAPI() {
-    return `http://${localStorage.getItem('aquasense_ip') || '192.168.0.9'}:5000`;
-  }
-
   function togglePass(id) {
     const i = document.getElementById(id);
     i.type = i.type === 'password' ? 'text' : 'password';
@@ -115,7 +112,7 @@
     btn.disabled = true;
 
     try {
-      const res = await axios.post(`${getAPI()}/registro`, { nombre, correo, contrasena });
+      const res = await axios.post(`${CONFIG.API_BASE_URL}/registro`, { nombre, correo, contrasena });
 
       if (res.data.ok) {
         okEl.textContent = '✅ Cuenta creada — redirigiendo...';

@@ -8,15 +8,20 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_mysqldb import MySQL
 from flask_cors import CORS
 import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-# Configuración MySQL
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'esp32'
+# Configuración MySQL desde .env
+app.config['MYSQL_HOST'] = os.getenv('MYSQL_ADDON_HOST', 'localhost')
+app.config['MYSQL_USER'] = os.getenv('MYSQL_ADDON_USER', 'root')
+app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_ADDON_PASSWORD', '')
+app.config['MYSQL_DB'] = os.getenv('MYSQL_ADDON_DB', 'esp32')
+app.config['MYSQL_PORT'] = int(os.getenv('MYSQL_ADDON_PORT', 3306))
 
 mysql = MySQL(app)
 
@@ -26,23 +31,34 @@ medir = False
 # -----------------------------
 # SERVIR ARCHIVOS HTML/CSS/JS
 # -----------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(os.path.dirname(BACKEND_DIR), 'frontend')
 
 @app.route('/')
 def index():
-    return send_from_directory(os.path.join(BASE_DIR, 'html'), 'index.html')
+    return send_from_directory(FRONTEND_DIR, 'index.html')
 
-@app.route('/html/<path:filename>')
-def serve_html(filename):
-    return send_from_directory(os.path.join(BASE_DIR, 'html'), filename)
+@app.route('/<path:filename>')
+def serve_frontend(filename):
+    """Servir archivos HTML del frontend"""
+    if filename.endswith('.html'):
+        return send_from_directory(FRONTEND_DIR, filename)
+    return send_from_directory(FRONTEND_DIR, filename)
 
 @app.route('/css/<path:filename>')
 def serve_css(filename):
-    return send_from_directory(os.path.join(BASE_DIR, 'css'), filename)
+    """Servir archivos CSS"""
+    return send_from_directory(os.path.join(FRONTEND_DIR, 'css'), filename)
 
 @app.route('/js/<path:filename>')
 def serve_js(filename):
-    return send_from_directory(os.path.join(BASE_DIR, 'js'), filename)
+    """Servir archivos JavaScript"""
+    return send_from_directory(os.path.join(FRONTEND_DIR, 'js'), filename)
+
+@app.route('/img/<path:filename>')
+def serve_img(filename):
+    """Servir imágenes"""
+    return send_from_directory(os.path.join(FRONTEND_DIR, 'img'), filename)
 
 
 # -----------------------------

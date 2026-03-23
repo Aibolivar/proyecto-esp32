@@ -52,8 +52,8 @@
   </div>
 </div>
 
+<script src="js/app.js"></script>
 <script>
-  function getAPI() { return `http://${localStorage.getItem('aquasense_ip')||'192.168.0.9'}:5000`; }
   function togglePassword() { const i=document.getElementById('contrasena'); i.type=i.type==='password'?'text':'password'; }
   document.addEventListener('keydown', e => { if(e.key==='Enter') iniciarSesion(); });
 
@@ -65,7 +65,7 @@
     if(!correo||!contrasena){ errEl.textContent='⚠️ Completa todos los campos'; errEl.classList.add('show'); return; }
     btn.textContent='Verificando...'; btn.disabled=true; errEl.classList.remove('show');
     try {
-      const res=await axios.post(`${getAPI()}/login`,{correo,contrasena});
+      const res=await axios.post(`${CONFIG.API_BASE_URL}/login`,{correo,contrasena});
       if(res.data.ok){
         localStorage.setItem('aq_usuario',JSON.stringify(res.data.usuario));
         btn.textContent='✅ Acceso concedido';
