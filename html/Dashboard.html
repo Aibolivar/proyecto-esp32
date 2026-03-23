@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AquaSense — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #070e1a;
+      --bg2: #0d1829;
+      --bg3: #111e30;
+      --bg4: #172540;
+      --border: rgba(0,200,255,0.10);
+      --border2: rgba(0,200,255,0.18);
+      --green: #00e5a0;
+      --yellow: #f5c542;
+      --red: #ff4d6d;
+      --blue: #00c8ff;
+      --text1: #e8f4ff;
+      --text2: #8ab0cc;
+      --text3: #4a6a88;
+      --card-shadow: 0 4px 32px rgba(0,0,0,0.5);
+      --sidebar-w: 230px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text1); display:flex; min-height:100vh; overflow-x:hidden; }
+
+    /* Water BG */
+    .water-bg {
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background: radial-gradient(ellipse 80% 60% at 20% 10%, rgba(0,120,180,0.09) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 80% at 80% 90%, rgba(0,200,120,0.06) 0%, transparent 60%);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width:var(--sidebar-w); min-height:100vh; background:var(--bg2);
+      border-right:1px solid var(--border); display:flex; flex-direction:column;
+      position:fixed; left:0; top:0; bottom:0; z-index:100;
+    }
+    .sidebar-logo { padding:18px 16px 14px; border-bottom:1px solid var(--border); }
+    .logo-mark { display:flex; align-items:center; gap:10px; }
+    .logo-icon { font-size:1.5rem; background:linear-gradient(135deg,#0066aa,#00c8ff); width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+    .logo-text { font-size:1.1rem; font-weight:700; color:var(--blue); letter-spacing:0.5px; }
+    .logo-sub { font-size:0.62rem; color:var(--text3); letter-spacing:2px; text-transform:uppercase; font-family:'Space Mono',monospace; }
+    .sidebar-section { padding:10px 10px 4px; }
+    .sidebar-label { font-size:0.6rem; text-transform:uppercase; letter-spacing:2px; color:var(--text3); padding:4px 8px 6px; font-family:'Space Mono',monospace; }
+    .nav-item {
+      display:flex; align-items:center; gap:9px; padding:8px 12px; border-radius:8px;
+      font-size:0.85rem; color:var(--text2); cursor:pointer; transition:all 0.18s;
+      text-decoration:none; margin-bottom:2px;
+    }
+    .nav-item:hover { background:var(--bg4); color:var(--text1); }
+    .nav-item.active { background:linear-gradient(90deg,rgba(0,200,255,0.15),rgba(0,200,255,0.04)); color:var(--blue); border-left:2px solid var(--blue); }
+    .nav-badge { margin-left:auto; background:var(--red); color:#fff; font-size:0.6rem; border-radius:10px; padding:1px 6px; font-weight:700; }
+    .nav-icon { font-size:1rem; width:18px; text-align:center; }
+    .sidebar-bottom { margin-top:auto; padding:14px 10px; border-top:1px solid var(--border); }
+    .pond-selector-label { font-size:0.6rem; text-transform:uppercase; letter-spacing:2px; color:var(--text3); padding:0 4px 8px; font-family:'Space Mono',monospace; }
+    .pond-list { display:flex; flex-direction:column; gap:4px; }
+    .pond-btn { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:7px; font-size:0.78rem; color:var(--text2); cursor:pointer; transition:all 0.18s; }
+    .pond-btn:hover { background:var(--bg4); color:var(--text1); }
+    .pond-btn.active { background:var(--bg4); color:var(--text1); }
+    .pond-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .dot-green { background:var(--green); box-shadow:0 0 6px var(--green); }
+    .dot-yellow { background:var(--yellow); box-shadow:0 0 6px var(--yellow); }
+    .dot-red { background:var(--red); box-shadow:0 0 6px var(--red); }
+
+    /* MAIN */
+    .main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; position:relative; z-index:1; }
+
+    /* TOPBAR */
+    .topbar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 28px; background:var(--bg2); border-bottom:1px solid var(--border);
+      position:sticky; top:0; z-index:50;
+    }
+    .topbar-title { font-size:1.15rem; font-weight:700; color:var(--text1); }
+    .topbar-sub { font-size:0.72rem; color:var(--text3); margin-top:2px; }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .conn-indicator { display:flex; align-items:center; gap:6px; font-size:0.75rem; color:var(--text2); }
+    .mini-dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .status-pill { background:rgba(0,229,160,0.12); border:1px solid rgba(0,229,160,0.3); color:var(--green); font-size:0.65rem; font-family:'Space Mono',monospace; padding:4px 10px; border-radius:20px; letter-spacing:1px; display:flex; align-items:center; gap:5px; }
+    .status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 1.5s infinite; }
+    .clock { font-family:'Space Mono',monospace; font-size:0.85rem; color:var(--blue); background:var(--bg3); padding:5px 12px; border-radius:7px; border:1px solid var(--border); }
+    .btn-icon { width:34px; height:34px; background:var(--bg3); border:1px solid var(--border); border-radius:7px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1rem; transition:all 0.18s; position:relative; }
+    .btn-icon:hover { background:var(--bg4); border-color:var(--border2); }
+    .notif-badge { position:absolute; top:-4px; right:-4px; background:var(--red); color:#fff; font-size:0.55rem; width:15px; height:15px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; }
+
+    /* CONTENT */
+    .content { padding:22px 28px; display:flex; flex-direction:column; gap:20px; }
+    .section-header { display:flex; align-items:center; justify-content:space-between; }
+    .section-title { font-size:0.9rem; font-weight:600; color:var(--text1); display:flex; align-items:center; gap:8px; }
+    .section-title::before { content:''; display:inline-block; width:3px; height:16px; background:var(--blue); border-radius:2px; }
+    .btn-sm { background:var(--bg3); border:1px solid var(--border2); color:var(--blue); font-size:0.72rem; padding:5px 12px; border-radius:7px; cursor:pointer; font-family:'Outfit',sans-serif; transition:all 0.18s; }
+    .btn-sm:hover { background:var(--bg4); }
+
+    /* METRIC CARDS */
+    .metrics-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+    .metric-card {
+      background:var(--bg2); border:1px solid var(--border); border-radius:14px;
+      padding:16px; display:flex; flex-direction:column; gap:10px; position:relative; overflow:hidden;
+      transition:border-color 0.3s, box-shadow 0.3s;
+    }
+    .metric-card:hover { border-color:var(--border2); box-shadow:0 4px 20px rgba(0,200,255,0.07); }
+    .metric-glow { position:absolute; top:-20px; right:-20px; width:100px; height:100px; border-radius:50%; opacity:0.07; filter:blur(30px); pointer-events:none; }
+    .metric-ok-glow { background:var(--green); }
+    .metric-warn-glow { background:var(--yellow); }
+    .metric-crit-glow { background:var(--red); }
+    .metric-header { display:flex; align-items:center; justify-content:space-between; }
+    .metric-icon-wrap { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1rem; }
+    .icon-blue { background:rgba(0,200,255,0.15); }
+    .icon-green { background:rgba(0,229,160,0.15); }
+    .icon-yellow { background:rgba(245,197,66,0.15); }
+    .metric-status-badge { font-size:0.6rem; font-family:'Space Mono',monospace; padding:2px 8px; border-radius:10px; font-weight:700; letter-spacing:1px; }
+    .badge-ok { background:rgba(0,229,160,0.15); color:var(--green); border:1px solid rgba(0,229,160,0.25); }
+    .badge-warn { background:rgba(245,197,66,0.15); color:var(--yellow); border:1px solid rgba(245,197,66,0.25); }
+    .badge-crit { background:rgba(255,77,109,0.15); color:var(--red); border:1px solid rgba(255,77,109,0.25); }
+    .metric-value { font-size:2.2rem; font-weight:800; color:var(--text1); line-height:1; }
+    .metric-unit { font-size:1rem; font-weight:400; color:var(--text3); margin-left:2px; }
+    .metric-label { font-size:0.72rem; color:var(--text3); margin-top:2px; }
+    .metric-range { display:flex; align-items:center; gap:7px; }
+    .range-text { font-size:0.62rem; color:var(--text3); font-family:'Space Mono',monospace; min-width:22px; }
+    .range-bar { flex:1; height:4px; background:var(--bg4); border-radius:2px; overflow:hidden; position:relative; }
+    .range-fill { height:100%; border-radius:2px; position:relative; transition:width 1s cubic-bezier(.4,0,.2,1); display:flex; align-items:center; justify-content:flex-end; }
+    .fill-ok { background:linear-gradient(90deg,rgba(0,229,160,0.4),var(--green)); }
+    .fill-warn { background:linear-gradient(90deg,rgba(245,197,66,0.4),var(--yellow)); }
+    .fill-crit { background:linear-gradient(90deg,rgba(255,77,109,0.4),var(--red)); }
+    .range-dot { width:8px; height:8px; border-radius:50%; border:2px solid var(--bg2); flex-shrink:0; margin-right:-4px; }
+    .metric-trend { font-size:0.72rem; color:var(--text3); font-family:'Space Mono',monospace; }
+
+    /* CHARTS */
+    .charts-row { display:grid; grid-template-columns:1fr 320px; gap:14px; }
+    .chart-card { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:18px; }
+    .chart-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+    .chart-title { font-size:0.88rem; font-weight:600; color:var(--text1); }
+    .chart-sub { font-size:0.68rem; color:var(--text3); margin-top:2px; }
+    .chart-canvas-wrap { position:relative; height:200px; }
+    .chart-canvas-wrap-sq { position:relative; height:180px; display:flex; align-items:center; justify-content:center; }
+    .time-tabs { display:flex; gap:4px; }
+    .time-tab { font-size:0.68rem; padding:3px 9px; border-radius:5px; cursor:pointer; color:var(--text3); font-family:'Space Mono',monospace; transition:all 0.18s; border:1px solid transparent; }
+    .time-tab:hover { color:var(--text2); }
+    .time-tab.active { background:rgba(0,200,255,0.12); color:var(--blue); border-color:rgba(0,200,255,0.25); }
+
+    /* BOTTOM ROW */
+    .bottom-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+    /* ALERTS */
+    .alerts-list { display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; }
+    .alert-item { display:flex; align-items:center; gap:10px; padding:9px 12px; background:var(--bg3); border-radius:9px; border:1px solid var(--border); transition:border-color 0.18s; }
+    .alert-item:hover { border-color:var(--border2); }
+    .alert-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .alert-msg { flex:1; font-size:0.78rem; color:var(--text2); }
+    .alert-time { font-size:0.65rem; color:var(--text3); font-family:'Space Mono',monospace; white-space:nowrap; }
+    .alert-level { font-size:0.6rem; font-family:'Space Mono',monospace; padding:2px 6px; border-radius:5px; font-weight:700; }
+    .level-alta { background:rgba(255,77,109,0.15); color:var(--red); }
+    .level-media { background:rgba(245,197,66,0.15); color:var(--yellow); }
+    .level-baja { background:rgba(0,229,160,0.15); color:var(--green); }
+
+    /* TABLE */
+    .readings-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+    .readings-table th { padding:7px 10px; text-align:left; color:var(--text3); font-size:0.65rem; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid var(--border); font-family:'Space Mono',monospace; font-weight:400; }
+    .readings-table td { padding:7px 10px; border-bottom:1px solid rgba(0,0,0,0.2); color:var(--text2); }
+    .readings-table tr:hover td { background:var(--bg3); }
+    .status-ok-text { color:var(--green); font-size:0.65rem; font-family:'Space Mono',monospace; }
+    .status-warn-text { color:var(--yellow); font-size:0.65rem; font-family:'Space Mono',monospace; }
+    .status-crit-text { color:var(--red); font-size:0.65rem; font-family:'Space Mono',monospace; }
+    .empty-state { text-align:center; color:var(--text3); font-size:0.8rem; padding:20px; }
+
+    /* TOAST */
+    #toast {
+      position:fixed; bottom:24px; right:24px; background:var(--bg3); border:1px solid var(--border2);
+      color:var(--text1); padding:10px 18px; border-radius:10px; font-size:0.82rem;
+      display:flex; align-items:center; gap:8px; z-index:9999; box-shadow:var(--card-shadow);
+      transform:translateY(80px); opacity:0; transition:all 0.3s cubic-bezier(.4,0,.2,1);
+    }
+    #toast.show { transform:translateY(0); opacity:1; }
+
+    /* FADE IN */
+    .fade-in { animation:fadeIn 0.5s ease both; }
+    .fade-in-delay-1 { animation-delay:0.05s; }
+    .fade-in-delay-2 { animation-delay:0.1s; }
+    .fade-in-delay-3 { animation-delay:0.15s; }
+    .fade-in-delay-4 { animation-delay:0.2s; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+  <link rel="icon" type="image/png" href="../img/log.png">
+</head>
+<body>
+
+<div class="water-bg"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon" style="background:none;padding:0;"><img src="../img/log.png" style="width:40px;height:40px;border-radius:10px;" alt="logo"></div>
+      <div>
+        <div class="logo-text">AquaSense</div>
+        <div class="logo-sub">IoT Monitoring v1.0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-section" style="margin-top:8px;">
+    <div class="sidebar-label">Sistema</div>
+    <a class="nav-item active" href="Dashboard.html">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+    <a class="nav-item" href="Histórico.html">
+      <span class="nav-icon">📈</span> Histórico
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🔔</span> Alertas
+      <span class="nav-badge">3</span>
+    </a>
+  </div>
+
+  <div class="sidebar-section" style="margin-top:4px;">
+    <div class="sidebar-label">Configuración</div>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">📡</span> Sensores
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">⚙️</span> Umbrales
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">📤</span> Exportar
+    </a>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div onclick="cerrarSesion()" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:0.83rem;color:#e8445a;cursor:pointer;transition:all 0.2s;border:1px solid rgba(232,68,90,0.15);background:rgba(232,68,90,0.05);margin-bottom:10px;" onmouseover="this.style.background='rgba(232,68,90,0.12)'" onmouseout="this.style.background='rgba(232,68,90,0.05)'">
+      <span style="font-size:1rem;width:20px;text-align:center;">🚪</span> Cerrar Sesión
+    </div>
+    <div class="pond-selector-label">Piscina activa</div>
+    <div class="pond-list">
+      <div class="pond-btn active">
+        <span class="pond-dot dot-green"></span> Piscina 1 — ESP32-A
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Dashboard de Monitoreo</div>
+      <div class="topbar-sub">Granja Integral La Aleta del Tiburón · Barranquilla</div>
+    </div>
+    <div class="topbar-right">
+      <div class="conn-indicator">
+        <span class="mini-dot" id="conn-dot"></span>
+        <span id="conn-text">Conectado</span>
+      </div>
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        TIEMPO REAL
+      </div>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="btn-icon" onclick="forceRefresh()" title="Actualizar">🔄</div>
+      <div class="btn-icon" title="Notificaciones" style="position:relative;">
+        🔔
+        <span class="notif-badge" id="notif-count">3</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Metric Cards Header -->
+    <div class="section-header fade-in">
+      <div class="section-title">Parámetros en Tiempo Real</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div class="conn-indicator" id="last-update" style="font-size:0.7rem;"></div>
+        <button class="btn-sm" onclick="forceRefresh()">↻ Actualizar</button>
+        <button class="btn-sm" onclick="iniciarMedicion()">Iniciar medición</button>
+      </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card fade-in fade-in-delay-1" id="card-temp">
+        <div class="metric-glow metric-ok-glow"></div>
+        <div class="metric-header">
+          <div class="metric-icon-wrap icon-blue">🌡️</div>
+          <span class="metric-status-badge badge-ok" id="badge-temp">NORMAL</span>
+        </div>
+        <div>
+          <div class="metric-value"><span id="val-temp">--</span><span class="metric-unit">°C</span></div>
+          <div class="metric-label">Temperatura del Agua</div>
+        </div>
+        <div class="metric-range">
+          <span class="range-text">20°</span>
+          <div class="range-bar"><div class="range-fill fill-ok" id="bar-temp" style="width:0%"><div class="range-dot" style="background:var(--green)"></div></div></div>
+          <span class="range-text">35°</span>
+        </div>
+        <div class="metric-trend" id="trend-temp">— cargando...</div>
+      </div>
+
+      <div class="metric-card fade-in fade-in-delay-2" id="card-ph">
+        <div class="metric-glow metric-ok-glow"></div>
+        <div class="metric-header">
+          <div class="metric-icon-wrap icon-green">⚗️</div>
+          <span class="metric-status-badge badge-ok" id="badge-ph">NORMAL</span>
+        </div>
+        <div>
+          <div class="metric-value"><span id="val-ph">--</span><span class="metric-unit">pH</span></div>
+          <div class="metric-label">Potencial de Hidrógeno</div>
+        </div>
+        <div class="metric-range">
+          <span class="range-text">0</span>
+          <div class="range-bar"><div class="range-fill fill-ok" id="bar-ph" style="width:0%"><div class="range-dot" style="background:var(--green)"></div></div></div>
+          <span class="range-text">14</span>
+        </div>
+        <div class="metric-trend" id="trend-ph">— cargando...</div>
+      </div>
+
+      <div class="metric-card fade-in fade-in-delay-3" id="card-od">
+        <div class="metric-glow metric-ok-glow"></div>
+        <div class="metric-header">
+          <div class="metric-icon-wrap icon-yellow">💧</div>
+          <span class="metric-status-badge badge-ok" id="badge-od">NORMAL</span>
+        </div>
+        <div>
+          <div class="metric-value"><span id="val-od">--</span><span class="metric-unit">mg/L</span></div>
+          <div class="metric-label">Oxígeno Disuelto</div>
+        </div>
+        <div class="metric-range">
+          <span class="range-text">0</span>
+          <div class="range-bar"><div class="range-fill fill-ok" id="bar-od" style="width:0%"><div class="range-dot" style="background:var(--green)"></div></div></div>
+          <span class="range-text">15</span>
+        </div>
+        <div class="metric-trend" id="trend-od">— cargando...</div>
+      </div>
+
+      <div class="metric-card fade-in fade-in-delay-4" id="card-sys">
+        <div class="metric-glow metric-ok-glow"></div>
+        <div class="metric-header">
+          <div class="metric-icon-wrap icon-green">📡</div>
+          <span class="metric-status-badge badge-ok" id="badge-sys">ONLINE</span>
+        </div>
+        <div>
+          <div class="metric-value" style="font-size:1.6rem;"><span id="val-uptime">--</span><span class="metric-unit" style="font-size:0.8rem;">%</span></div>
+          <div class="metric-label">Disponibilidad del Sistema</div>
+        </div>
+        <div class="metric-range">
+          <span class="range-text">0</span>
+          <div class="range-bar"><div class="range-fill fill-ok" id="bar-uptime" style="width:0%"><div class="range-dot" style="background:var(--green)"></div></div></div>
+          <span class="range-text">100</span>
+        </div>
+        <div class="metric-trend" id="trend-sys" style="color:var(--text3);">— ESP32 Piscina 1</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row fade-in">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Tendencia Histórica de Parámetros</div>
+            <div class="chart-sub">Últimas lecturas · Actualización cada 30s</div>
+          </div>
+          <div class="time-tabs">
+            <div class="time-tab active" onclick="setTimeRange('1H',this)">1H</div>
+            <div class="time-tab" onclick="setTimeRange('6H',this)">6H</div>
+            <div class="time-tab" onclick="setTimeRange('24H',this)">24H</div>
+            <div class="time-tab" onclick="setTimeRange('7D',this)">7D</div>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart-history"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Estado General</div>
+            <div class="chart-sub">Piscina activa</div>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap-sq">
+          <canvas id="chart-status"></canvas>
+        </div>
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--text2);">
+            <span style="width:10px;height:10px;border-radius:2px;background:var(--green);display:inline-block;"></span> Normal
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--text2);">
+            <span style="width:10px;height:10px;border-radius:2px;background:var(--yellow);display:inline-block;"></span> Alerta
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--text2);">
+            <span style="width:10px;height:10px;border-radius:2px;background:var(--red);display:inline-block;"></span> Crítico
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Row -->
+    <div class="bottom-row fade-in">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Alertas Recientes</div>
+          <button class="btn-sm">Ver todas →</button>
+        </div>
+        <div class="alerts-list" id="alerts-list">
+          <div class="empty-state">Cargando alertas...</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Últimas Lecturas</div>
+          <button class="btn-sm" onclick="exportCSV()">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="readings-table">
+            <thead>
+              
+  `).join('');
+}
+
+// ── Simulation tick ──
+function tick() {
+  const base = pondData[currentPond];
+  const newData = {
+    temp: +(base.temp + (Math.random()-0.5)*1.5).toFixed(2),
+    ph: +(base.ph + (Math.random()-0.5)*0.2).toFixed(2),
+    od: +(base.od + (Math.random()-0.5)*0.4).toFixed(2),
+    uptime: base.uptime
+  };
+  updateMetrics(newData, currentPond);
+  addReading(newData);
+
+  // trend text
+  const prevTemp = historyData.temp[historyData.temp.length-1];
+  const diff = (newData.temp - prevTemp).toFixed(2);
+  document.getElementById('trend-temp').textContent = diff>0?`▲ +${diff} °C`:diff<0?`▼ ${diff} °C`:'— Sin cambio';
+  const prevPh = historyData.ph[historyData.ph.length-1];
+  const diffPh = (newData.ph - prevPh).toFixed(2);
+  document.getElementById('trend-ph').textContent = diffPh>0?`▲ +${diffPh} pH`:diffPh<0?`▼ ${diffPh} pH`:'— Sin cambio';
+  const prevOd = historyData.od[historyData.od.length-1];
+  const diffOd = (newData.od - prevOd).toFixed(2);
+  document.getElementById('trend-od').textContent = diffOd>0?`▲ +${diffOd} mg/L`:diffOd<0?`▼ ${diffOd} mg/L`:'— Sin cambio';
+
+  // Update chart
+  historyData.labels.push(genLabel());
+  historyData.temp.push(newData.temp);
+  historyData.ph.push(newData.ph);
+  historyData.od.push(newData.od);
+  if(historyData.labels.length>20){ historyData.labels.shift(); historyData.temp.shift(); historyData.ph.shift(); historyData.od.shift(); }
+  historyChart.data.labels = historyData.labels;
+  historyChart.data.datasets[0].data = historyData.temp;
+  historyChart.data.datasets[1].data = historyData.ph;
+  historyChart.data.datasets[2].data = historyData.od;
+  historyChart.update('none');
+}
+
+tick();
+setInterval(tick, 5000);
+
+function forceRefresh() { tick(); showToast('🔄','Datos actualizados'); }
+function iniciarMedicion() { showToast('📡','Medición iniciada en '+currentPond); }
+
+function selectPond(p, el) {
+  currentPond = p;
+  document.querySelectorAll('.pond-btn').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  historyData = { labels:[], temp:[], ph:[], od:[] };
+  initHistory();
+  tick();
+  showToast('📡','Piscina seleccionada: '+p);
+}
+
+function setTimeRange(r, el) {
+  document.querySelectorAll('.time-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  showToast('📊','Rango: '+r);
+}
+
+function exportCSV() {
+  const rows = [['Hora','Temp(°C)','pH','OD(mg/L)','Estado'],...readingsHistory.map(r=>[r.time,r.temp,r.ph,r.od,r.ok?'NORMAL':'ALERTA'])];
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = 'lecturas_aquasense.csv'; a.click();
+}
+
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+</script>
+<script>
+  function cerrarSesion() {
+    localStorage.removeItem('aq_usuario');
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>

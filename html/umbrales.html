@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AquaSense — Umbrales</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="icon" type="image/png" href="../img/log.png">
+</head>
+<body>
+<div class="water-bg"></div>
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon" style="background:none;padding:0;"><img src="../img/log.png" style="width:40px;height:40px;border-radius:10px;" alt="logo"></div>
+      <div><div class="logo-text">AquaSense</div><div class="logo-sub">IoT Monitoring v1.0</div></div>
+    </div>
+  </div>
+  <div class="sidebar-section" style="margin-top:8px;">
+    <div class="sidebar-label">Sistema</div>
+    <a class="nav-item" href="Dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item" href="Histórico.html"><span class="nav-icon">📊</span> Histórico</a>
+    <a class="nav-item" href="alertas.html"><span class="nav-icon">🔔</span> Alertas<span class="nav-badge">3</span></a>
+  </div>
+  <div class="sidebar-section" style="margin-top:4px;">
+    <div class="sidebar-label">Configuración</div>
+    <a class="nav-item" href="sensores.html"><span class="nav-icon">📡</span> Sensores</a>
+    <a class="nav-item active" href="umbrales.html"><span class="nav-icon">⚙️</span> Umbrales</a>
+    <a class="nav-item" href="reportes.html"><span class="nav-icon">📄</span> Reportes</a>
+  </div>
+  <div style="padding:12px 10px 0;">
+    <div onclick="cerrarSesion()" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:0.83rem;color:#e8445a;cursor:pointer;transition:all 0.2s;border:1px solid rgba(232,68,90,0.15);background:rgba(232,68,90,0.05);" onmouseover="this.style.background='rgba(232,68,90,0.12)'" onmouseout="this.style.background='rgba(232,68,90,0.05)'">
+      <span style="font-size:1rem;width:20px;text-align:center;">🚪</span> Cerrar Sesión
+    </div>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="pond-selector-label">Piscina activa</div>
+    <div class="pond-list">
+      <div class="pond-btn active">
+        <span class="pond-dot dot-green"></span> Piscina 1 — ESP32-A
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Configuración de Umbrales</div>
+      <div class="topbar-sub">Granja Integral La Aleta del Tiburón · Barranquilla</div>
+    </div>
+    <div class="topbar-right">
+      <div class="conn-indicator"><span class="mini-dot"></span><span>Conectado</span></div>
+      <div class="status-pill">⚙️ UMBRALES</div>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="btn-icon" title="Notificaciones" style="position:relative;">🔔<span class="notif-badge">3</span></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="info-panel fade-in">
+      <div class="info-icon">💡</div>
+      <div>
+        <div class="info-text-title">¿Cómo funcionan los umbrales?</div>
+        <div class="info-text-body">
+          Define los valores mínimos, óptimos y máximos para cada parámetro. Cuando un sensor supere el umbral máximo o baje del mínimo, el sistema generará una alerta automáticamente. Los valores actuales de los sensores se comparan en tiempo real contra estos umbrales.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header fade-in">
+      <div class="section-title">Umbrales por Parámetro</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sm" onclick="resetDefaults()">↺ Restaurar por defecto</button>
+        <button class="btn-save" onclick="saveAll()">💾 Guardar todos</button>
+      </div>
+    </div>
+
+    <div class="thresholds-grid fade-in">
+
+      <!-- TEMPERATURA -->
+      <div class="threshold-card">
+        <div class="tc-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="tc-icon-wrap">🌡️</div>
+            <div><div class="tc-name">Temperatura</div><div class="tc-unit">Unidad: °C · Sensor: DS18B20</div></div>
+          </div>
+        </div>
+        <div class="threshold-row">
+          <div class="th-field">
+            <div class="th-label min-label">Mínimo</div>
+            <input type="number" class="th-input min-field" id="temp-min" value="20" step="0.5">
+            <div class="th-sublabel min-label">°C</div>
+          </div>
+          <div class="th-field">
+            <div class="th-label opt-label">Óptimo</div>
+            <input type="number" class="th-input" id="temp-opt" value="26" step="0.5">
+            <div class="th-sublabel opt-label">°C</div>
+          </div>
+          <div class="th-field">
+            <div class="th-label max-label">Máximo</div>
+            <input type="number" class="th-input max-field" id="temp-max" value="32" step="0.5">
+            <div class="th-sublabel max-label">°C</div>
+          </div>
+        </div>
+        <div class="threshold-visual"><div class="tv-fill" style="width:60%;"></div></div>
+        <div class="threshold-status">
+          <div class="ts-current">Valor actual: <span class="ts-val ts-ok">28.3°C</span></div>
+          <button class="ts-save-btn" onclick="saveParam('Temperatura')">Guardar</button>
+        </div>
+      </div>
+
+      <!-- pH -->
+      <div class="threshold-card">
+        <div class="tc-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="tc-icon-wrap">⚗️</div>
+            <div><div class="tc-name">Potencial de Hidrógeno (pH)</div><div class="tc-unit">Unidad: pH · Sensor: Atlas pH</div></div>
+          </div>
+        </div>
+        <div class="threshold-row">
+          <div class="th-field">
+            <div class="th-label min-label">Mínimo</div>
+            <input type="number" class="th-input min-field" id="ph-min" value="6.5" step="0.1">
+            <div class="th-sublabel min-label">pH</div>
+          </div>
+          <div class="th-field">
+            <div class="th-label opt-label">Óptimo</div>
+            <input type="number" class="th-input" id="ph-opt" value="7.5" step="0.1">
+            <div class="th-sublabel opt-label">pH</div>
+          </div>
+          <div class="th-field">
+            <div class="th-label max-label">Máximo</div>
+            <input type="number" class="th-input max-field" id="ph-max" value="8.5" step="0.1">
+            <div class="th-sublabel max-label">pH</div>
+          </div>
+        </div>
+        <div class="threshold-visual"><div class="tv-fill" style="width:55%;"></div></div>
+        <div class="threshold-status">
+          <div class="ts-current">Valor actual: <span class="ts-val ts-ok">7.48 pH</span></div>
+          <button class="ts-save-btn" onclick="saveParam('pH')">Guardar</button>
+        </div>
+      </div>
+
+      <!-- OXÍGENO DISUELTO -->
+      <div class="threshold-card">
+        <div class="tc-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="tc-icon-wrap">💧</div>
+            <div><div class="tc-name">Oxígeno Disuelto</div><div class="tc-unit">Unidad: mg/L · Sensor: Atlas DO</div></div>
+          </div>
+        </div>
+        <div class="threshold-row">
+          <div class="th-field">
+            <div class="th-label min-label">Mínimo</div>
+            <input type="number" class="th-input min-field" id="od-min" value="5.0" step="0.1">
+            <div class="th-sublabel min-label">mg/L</div>
+          </div>
+          <div class="th-field">
+            <div class="th-label opt-label">Óptimo</div>
+            <input type="number" class="th-input" id="od-opt" value="7.0" step="0.1">
+            <div class="th-sublabel opt-label">mg/L</div>
+          </div>
+          <div class="th-field">
+            <div class="th-label max-label">Máximo</div>
+            <input type="number" class="th-input max-field" id="od-max" value="12.0" step="0.1">
+            <div class="th-sublabel max-label">mg/L</div>
+          </div>
+        </div>
+        <div class="threshold-visual"><div class="tv-fill" style="width:45%;"></div></div>
+        <div class="threshold-status">
+          <div class="ts-current">Valor actual: <span class="ts-val ts-warn">5.8 mg/L</span></div>
+          <button class="ts-save-btn" onclick="saveParam('Oxígeno Disuelto')">Guardar</button>
+        </div>
+      </div>
+
+      <!-- TURBIDEZ -->
+      <div class="threshold-card">
+        <div class="tc-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="tc-icon-wrap">🌫️</div>
+            <div><div class="tc-name">Turbidez</div><div class="tc-unit">Unidad: NTU · Sensor: SEN0189</div></div>
+          </div>
+        </div>
+        <div class="threshold-row">
+          <div class="th-field">
+            <div class="th-label min-label">Mínimo</div>
+            <input type="number" class="th-input min-field" id="turb-min" value="0" step="0.5">
+            <div class="th-sublabel min-label">NTU</div>
+          </div>
+          <div class="th-field">
+            <div class="th-label opt-label">Óptimo</div>
+            <input type="number" class="th-input" id="turb-opt" value="3" step="0.5">
+            <div class="th-sublabel opt-label">NTU</div>
+          </div>
+          <div class="th-field">
+            <div class="th-label max-label">Máximo</div>
+            <input type="number" class="th-input max-field" id="turb-max" value="5" step="0.5">
+            <div class="th-sublabel max-label">NTU</div>
+          </div>
+        </div>
+        <div class="threshold-visual"><div class="tv-fill" style="width:80%;"></div></div>
+        <div class="threshold-status">
+          <div class="ts-current">Valor actual: <span class="ts-val ts-bad">8.5 NTU ⚠</span></div>
+          <button class="ts-save-btn" onclick="saveParam('Turbidez')">Guardar</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"><span id="toast-icon">ℹ️</span><span id="toast-msg">Mensaje</span></div>
+
+<script>
+  function updateClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('es-CO', { hour12: false });
+  }
+  setInterval(updateClock, 1000); updateClock();
+
+  function saveParam(name) {
+    showToast('✅', `Umbral de ${name} guardado correctamente`);
+  }
+
+  function saveAll() {
+    showToast('💾', 'Todos los umbrales guardados correctamente');
+  }
+
+  function resetDefaults() {
+    document.getElementById('temp-min').value = 20;
+    document.getElementById('temp-opt').value = 26;
+    document.getElementById('temp-max').value = 32;
+    document.getElementById('ph-min').value = 6.5;
+    document.getElementById('ph-opt').value = 7.5;
+    document.getElementById('ph-max').value = 8.5;
+    document.getElementById('od-min').value = 5.0;
+    document.getElementById('od-opt').value = 7.0;
+    document.getElementById('od-max').value = 12.0;
+    document.getElementById('turb-min').value = 0;
+    document.getElementById('turb-opt').value = 3;
+    document.getElementById('turb-max').value = 5;
+    showToast('↺', 'Valores restaurados a los umbrales por defecto');
+  }
+
+  function showToast(icon, msg) {
+    document.getElementById('toast-icon').textContent = icon;
+    document.getElementById('toast-msg').textContent = msg;
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+<script>
+  function cerrarSesion() {
+    localStorage.removeItem('aq_usuario');
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>

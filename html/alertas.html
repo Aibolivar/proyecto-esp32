@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AquaSense — Alertas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="icon" type="image/png" href="../img/log.png">
+</head>
+<body>
+<div class="water-bg"></div>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon" style="background:none;padding:0;"><img src="../img/log.png" style="width:40px;height:40px;border-radius:10px;" alt="logo"></div>
+      <div><div class="logo-text">AquaSense</div><div class="logo-sub">IoT Monitoring v1.0</div></div>
+    </div>
+  </div>
+  <div class="sidebar-section" style="margin-top:8px;">
+    <div class="sidebar-label">Sistema</div>
+    <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item" href="Histórico.html"><span class="nav-icon">📊</span> Histórico</a>
+    <a class="nav-item active" href="alertas.html"><span class="nav-icon">🔔</span> Alertas<span class="nav-badge" id="alert-count">0</span></a>
+  </div>
+  <div class="sidebar-section" style="margin-top:4px;">
+    <div class="sidebar-label">Configuración</div>
+    <a class="nav-item" href="sensores.html"><span class="nav-icon">📡</span> Sensores</a>
+    <a class="nav-item" href="umbrales.html"><span class="nav-icon">⚙️</span> Umbrales</a>
+    <a class="nav-item" href="reportes.html"><span class="nav-icon">📤</span> Exportar</a>
+  </div>
+  <div class="sidebar-bottom">
+    <div onclick="cerrarSesion()" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:0.83rem;color:#e8445a;cursor:pointer;transition:all 0.2s;border:1px solid rgba(232,68,90,0.15);background:rgba(232,68,90,0.05);margin-bottom:10px;" onmouseover="this.style.background='rgba(232,68,90,0.12)'" onmouseout="this.style.background='rgba(232,68,90,0.05)'">
+      <span style="font-size:1rem;width:20px;text-align:center;">🚪</span> Cerrar Sesión
+    </div>
+    <div class="pond-selector-label">Piscina activa</div>
+    <div class="pond-list">
+      <div class="pond-btn active"><span class="pond-dot dot-green"></span> Piscina 1 — ESP32-A</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Gestión de Alertas</div>
+      <div class="topbar-sub">Granja Integral La Aleta del Tiburón · Barranquilla</div>
+    </div>
+    <div class="topbar-right">
+      <div class="conn-indicator"><span class="mini-dot" id="conn-dot"></span><span id="conn-text">Conectado</span></div>
+      <div class="status-pill" style="background:rgba(255,77,106,0.1);border-color:rgba(255,77,106,0.3);color:var(--red);"><span class="status-dot" style="background:var(--red);"></span> <span id="pill-text">CARGANDO</span></div>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="btn-icon" onclick="cargarAlertas()">🔄</div>
+      <div class="btn-icon" style="position:relative;">🔔<span class="notif-badge" id="notif-count">0</span></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- TARJETAS RESUMEN -->
+    <div class="metrics-grid fade-in" style="grid-template-columns:repeat(3,1fr);">
+      <div class="metric-card" style="border-color:rgba(255,77,106,0.2);">
+        <div class="metric-glow" style="background:linear-gradient(90deg,transparent,var(--red),transparent);"></div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="metric-icon-wrap" style="background:rgba(255,77,106,0.15);font-size:1.2rem;">🚨</div>
+          <div>
+            <div class="metric-value" style="font-size:1.8rem;color:var(--red);" id="n-activas">0</div>
+            <div class="metric-label">Alertas Activas</div>
+          </div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-glow metric-ok-glow"></div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="metric-icon-wrap icon-green" style="font-size:1.2rem;">✅</div>
+          <div>
+            <div class="metric-value" style="font-size:1.8rem;color:var(--green);">0</div>
+            <div class="metric-label">Resueltas hoy</div>
+          </div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-glow" style="background:linear-gradient(90deg,transparent,var(--blue),transparent);"></div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="metric-icon-wrap" style="background:rgba(56,182,255,0.15);font-size:1.2rem;">📊</div>
+          <div>
+            <div class="metric-value" style="font-size:1.8rem;color:var(--blue);" id="n-total">0</div>
+            <div class="metric-label">Total registradas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BANNER ALERTAS ACTIVAS -->
+    <div id="banner" class="fade-in" style="display:none;background:rgba(255,77,106,0.07);border:1px solid rgba(255,77,106,0.2);border-radius:12px;padding:14px 18px;gap:14px;align-items:flex-start;">
+      <div style="font-size:1.4rem;">🔔</div>
+      <div>
+        <div style="font-size:0.85rem;font-weight:700;color:var(--red);">ALERTAS ACTIVAS DEL SISTEMA</div>
+        <div style="font-size:0.7rem;color:var(--text3);margin-top:2px;">Piscina 1 — ESP32-A · Requieren atención</div>
+        <div id="banner-tags" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="section-header fade-in">
+      <div class="section-title">Historial de Alertas · /getAlertas</div>
+      <button class="btn-sm" onclick="exportarCSV()">⬇ CSV</button>
+    </div>
+
+    <div class="chart-card fade-in" style="padding:0;">
+      <div style="overflow-x:auto;">
+        <table class="readings-table">
+          <thead><tr><th>#</th><th>Mensaje</th><th>Estado</th><th>Fecha / Hora</th></tr></thead>
+          <tbody id="alertas-tbody">
+            <tr><td colspan="4" class="empty-state">Cargando alertas...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"><span id="toast-icon">ℹ️</span><span id="toast-msg">Mensaje</span></div>
+
+<script>
+  function getAPI() {
+    const ip = localStorage.getItem('aquasense_ip') || '192.168.0.9';
+    return `http://${ip}:5000`;
+  }
+  const API = getAPI();
+  let alertasData = [];
+
+  function updateClock() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('es-CO', { hour12: false });
+  }
+  setInterval(updateClock, 1000); updateClock();
+
+  async function cargarAlertas() {
+    try {
+      const res = await axios.get(`${API}/getAlertas`);
+      // [[mensaje, fecha_hora], ...] — solo activas
+      alertasData = res.data.map(([mensaje, fecha], i) => ({ id: i+1, mensaje, fecha }));
+
+      const n = alertasData.length;
+      document.getElementById('n-activas').textContent = n;
+      document.getElementById('n-total').textContent   = n;
+      document.getElementById('alert-count').textContent = n;
+      document.getElementById('notif-count').textContent = n;
+      document.getElementById('pill-text').textContent   = n > 0 ? `${n} ACTIVA${n>1?'S':''}` : 'SIN ALERTAS';
+
+      const banner = document.getElementById('banner');
+      if (n > 0) {
+        banner.style.display = 'flex';
+        document.getElementById('banner-tags').innerHTML = alertasData.map(a =>
+          `<span style="background:rgba(255,77,106,0.12);border:1px solid rgba(255,77,106,0.3);color:var(--red);font-size:0.65rem;font-weight:600;border-radius:6px;padding:4px 10px;font-family:'Space Mono',monospace;">⚠ ${a.mensaje}</span>`
+        ).join('');
+      } else {
+        banner.style.display = 'none';
+      }
+
+      renderTabla();
+      document.getElementById('conn-dot').className  = 'mini-dot';
+      document.getElementById('conn-text').textContent = 'Conectado';
+    } catch(e) {
+      document.getElementById('conn-dot').className  = 'mini-dot offline';
+      document.getElementById('conn-text').textContent = 'Sin conexión';
+      showToast('❌', 'No se pudo conectar con la API');
+    }
+  }
+
+  function renderTabla() {
+    const tbody = document.getElementById('alertas-tbody');
+    if (!alertasData.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">✅ Sin alertas activas</td></tr>'; return;
+    }
+    tbody.innerHTML = alertasData.map(a => `
+      <tr>
+        <td style="font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--text3);">#${String(a.id).padStart(3,'0')}</td>
+        <td style="color:var(--text1);font-weight:500;">⚠ ${a.mensaje}</td>
+        <td><span style="background:rgba(255,77,106,0.12);color:var(--red);border:1px solid rgba(255,77,106,0.25);font-size:0.6rem;font-weight:700;border-radius:20px;padding:3px 10px;font-family:'Space Mono',monospace;">● ACTIVA</span></td>
+        <td style="font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--text3);">${new Date(a.fecha).toLocaleString('es-CO')}</td>
+      </tr>`
+    ).join('');
+  }
+
+  function exportarCSV() {
+    if (!alertasData.length) { showToast('⚠️', 'Sin alertas'); return; }
+    const rows = [['ID','Mensaje','Estado','Fecha'], ...alertasData.map(a=>[a.id,a.mensaje,'activa',a.fecha])];
+    const csv  = rows.map(r=>r.join(',')).join('\n');
+    const el   = document.createElement('a');
+    el.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    el.download = `alertas_${new Date().toISOString().slice(0,10)}.csv`;
+    el.click();
+    showToast('⬇️', 'CSV exportado');
+  }
+
+  function showToast(icon, msg) {
+    document.getElementById('toast-icon').textContent = icon;
+    document.getElementById('toast-msg').textContent  = msg;
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    cargarAlertas();
+    setInterval(cargarAlertas, 30000);
+  });
+</script>
+<script>
+  function cerrarSesion() {
+    localStorage.removeItem('aq_usuario');
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>
